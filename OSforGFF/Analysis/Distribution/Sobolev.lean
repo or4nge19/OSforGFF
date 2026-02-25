@@ -5,7 +5,7 @@ Authors: Moritz Doll
 -/
 module
 
-import OSforGFF.Analysis.Distribution.FourierMultiplier
+public import OSforGFF.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
 
 /-! # Sobolev spaces (Bessel potential spaces)
@@ -19,7 +19,182 @@ variable {E F : Type*}
   [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 open FourierTransform TemperedDistribution ENNReal MeasureTheory
-open scoped SchwartzMap
+open scoped SchwartzMap LineDeriv Real RealInnerProductSpace
+
+section TemperedFourierMultiplierCompat
+
+variable [NormedSpace ℂ F]
+
+/-- Fourier multiplier on tempered distributions (compat API). -/
+def fourierMultiplierCLM (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F]
+    (g : E → ℂ) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
+  FourierTransform.fourierInvCLM ℂ 𝓢'(E, F) ∘L
+    TemperedDistribution.smulLeftCLM F g ∘L
+    FourierTransform.fourierCLM ℂ 𝓢'(E, F)
+
+theorem fourierMultiplierCLM_apply (g : E → ℂ) (f : 𝓢'(E, F)) :
+    fourierMultiplierCLM F g f = 𝓕⁻ (TemperedDistribution.smulLeftCLM F g (𝓕 f)) := by
+  rfl
+
+@[simp]
+theorem fourier_fourierMultiplierCLM (g : E → ℂ) (f : 𝓢'(E, F)) :
+    𝓕 (fourierMultiplierCLM F g f) = TemperedDistribution.smulLeftCLM F g (𝓕 f) := by
+  simp [fourierMultiplierCLM]
+
+private theorem fourier_injective : Function.Injective (fun h : 𝓢'(E, F) => 𝓕 h) := by
+  intro a b hab
+  have h := congrArg (fun t : 𝓢'(E, F) => 𝓕⁻ t) hab
+  simpa using h
+
+theorem fourierMultiplierCLM_fourierMultiplierCLM_apply {g₁ g₂ : E → ℂ}
+    (hg₁ : g₁.HasTemperateGrowth) (hg₂ : g₂.HasTemperateGrowth) (f : 𝓢'(E, F)) :
+    fourierMultiplierCLM F g₁ (fourierMultiplierCLM F g₂ f) =
+      fourierMultiplierCLM F (g₁ * g₂) f := by
+  apply fourier_injective (E := E) (F := F)
+  simp [TemperedDistribution.smulLeftCLM_smulLeftCLM_apply, hg₁, hg₂]
+  ext x
+  simp [mul_comm]
+
+theorem fourierMultiplierCLM_smul_apply {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (c : ℂ) (f : 𝓢'(E, F)) :
+    fourierMultiplierCLM F (c • g) f = c • fourierMultiplierCLM F g f := by
+  apply fourier_injective (E := E) (F := F)
+  simp [TemperedDistribution.smulLeftCLM_smul (F := F) hg c]
+
+theorem fourierMultiplierCLM_const (c : ℂ) :
+    fourierMultiplierCLM F (fun _ : E ↦ c) = c • ContinuousLinearMap.id ℂ _ := by
+  ext1 f
+  apply fourier_injective (E := E) (F := F)
+  simp [fourierMultiplierCLM]
+
+theorem fourierMultiplierCLM_sum {ι : Type*} {g : ι → E → ℂ} {s : Finset ι}
+    (hg : ∀ i ∈ s, (g i).HasTemperateGrowth) :
+    fourierMultiplierCLM F (fun x ↦ ∑ i ∈ s, g i x) = ∑ i ∈ s, fourierMultiplierCLM F (g i) := by
+  ext1 f
+  apply fourier_injective (E := E) (F := F)
+  simp [TemperedDistribution.smulLeftCLM_sum hg]
+
+theorem lineDeriv_eq_fourierMultiplierCLM (m : E) (f : 𝓢'(E, F)) :
+    ∂_{m} f = (2 * Real.pi * Complex.I) • fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x m : ℂ)) f := by
+  apply fourier_injective (E := E) (F := F)
+  simp [TemperedDistribution.fourier_lineDerivOp_eq]
+
+open scoped Laplacian
+
+theorem laplacian_eq_fourierMultiplierCLM (f : 𝓢'(E, F)) :
+    Δ f = (-(2 * Real.pi) ^ 2 : ℂ) •
+      fourierMultiplierCLM F (fun x : E ↦ Complex.ofReal (‖x‖ ^ 2)) f := by
+  let ι := Fin (Module.finrank ℝ E)
+  let b : OrthonormalBasis ι ℝ E := stdOrthonormalBasis ℝ E
+  let c : ℂ := 2 * Real.pi * Complex.I
+  have hinner : ∀ i : ι, (fun x : E ↦ (inner ℝ x (b i) : ℂ)).HasTemperateGrowth := by
+    intro i
+    fun_prop
+  have hcomp (i : ι) :
+      fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ))
+        (fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ)) f) =
+      fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ)) f := by
+    simpa using fourierMultiplierCLM_fourierMultiplierCLM_apply
+      (E := E) (F := F)
+      (g₁ := fun x : E ↦ (inner ℝ x (b i) : ℂ))
+      (g₂ := fun x : E ↦ (inner ℝ x (b i) : ℂ))
+      (hg₁ := hinner i) (hg₂ := hinner i) (f := f)
+  have hsumMul :
+      (∑ i : ι, fourierMultiplierCLM F
+          (fun x : E ↦ (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ)) f)
+        =
+      fourierMultiplierCLM F
+        (fun x : E ↦ ∑ i : ι, (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ)) f := by
+    simpa using
+      congrArg (fun T : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) ↦ T f)
+        (fourierMultiplierCLM_sum (E := E) (F := F)
+          (g := fun i : ι ↦ fun x : E ↦ (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ))
+          (s := Finset.univ)
+          (by
+            intro i hi
+            have h1 : (fun x : E ↦ (inner ℝ x (b i) : ℂ)).HasTemperateGrowth := hinner i
+            simpa [pow_two] using h1.mul h1)).symm
+  have hc2 : c * c = (-(2 * Real.pi) ^ 2 : ℂ) := by
+    dsimp [c]
+    ring_nf
+    simp [Complex.I_sq]
+  calc
+    Δ f = ∑ i : ι, ∂_{b i} (∂_{b i} f) := by
+      simpa [b] using TemperedDistribution.laplacian_eq_sum (b := b) (f := f)
+    _ = ∑ i : ι, c •
+        (c • fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ))
+          (fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ)) f)) := by
+          simp [lineDeriv_eq_fourierMultiplierCLM (E := E) (F := F), c, map_smul]
+    _ = ∑ i : ι, (c * c) •
+        fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ)) f := by
+          refine Finset.sum_congr rfl ?_
+          intro i hi
+          calc
+            c •
+              (c • fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ))
+                (fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ)) f))
+                = (c * c) •
+                fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ))
+                  (fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ)) f) := by
+                    simp [smul_smul]
+            _ = (c * c) •
+                fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ)) f := by
+                    rw [hcomp i]
+    _ = (c * c) • ∑ i : ι,
+          fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ)) f := by
+          simpa using
+            (Finset.smul_sum
+              (s := (Finset.univ : Finset ι))
+              (r := c * c)
+              (f := fun i : ι ↦
+                fourierMultiplierCLM F (fun x : E ↦ (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ)) f)).symm
+    _ = (c * c) • fourierMultiplierCLM F
+          (fun x : E ↦ ∑ i : ι, (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ)) f := by
+          rw [hsumMul]
+    _ = (-(2 * Real.pi) ^ 2 : ℂ) • fourierMultiplierCLM F
+          (fun x : E ↦ ∑ i : ι, (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ)) f := by
+          simp [hc2]
+    _ = (-(2 * Real.pi) ^ 2 : ℂ) •
+          fourierMultiplierCLM F (fun x : E ↦ Complex.ofReal (‖x‖ ^ 2)) f := by
+          have hnorm :
+              (fun x : E ↦ ∑ i : ι, (inner ℝ x (b i) : ℂ) * (inner ℝ x (b i) : ℂ))
+                = (fun x : E ↦ Complex.ofReal (‖x‖ ^ 2)) := by
+            funext x
+            norm_cast
+            simpa [pow_two] using b.sum_sq_inner_left x
+          simp [hnorm]
+
+private theorem smulLeftCLM_toTemperedDistributionCLM_eq (g : E → ℂ) (f : 𝓢(E, F)) :
+    TemperedDistribution.smulLeftCLM F g (f : 𝓢'(E, F)) =
+      (SchwartzMap.smulLeftCLM (F := F) g f : 𝓢'(E, F)) := by
+  by_cases hg : g.HasTemperateGrowth
+  · ext u
+    simp [TemperedDistribution.smulLeftCLM_apply_apply, SchwartzMap.smulLeftCLM_apply_apply, hg]
+    refine MeasureTheory.integral_congr_ae ?_
+    filter_upwards with x
+    simp [smul_smul, mul_comm]
+  · ext u
+    simp [TemperedDistribution.smulLeftCLM, SchwartzMap.smulLeftCLM, hg]
+
+theorem fourierMultiplierCLM_toTemperedDistributionCLM_eq {g : E → ℂ}
+    (_hg : g.HasTemperateGrowth) [CompleteSpace F] (f : 𝓢(E, F)) :
+    fourierMultiplierCLM F g (f : 𝓢'(E, F)) = (SchwartzMap.fourierMultiplierCLM F g f : 𝓢'(E, F)) := by
+  calc
+    fourierMultiplierCLM F g (f : 𝓢'(E, F))
+        = 𝓕⁻ (TemperedDistribution.smulLeftCLM F g (𝓕 (f : 𝓢'(E, F)))) := by
+            rfl
+    _ = 𝓕⁻ (TemperedDistribution.smulLeftCLM F g ((𝓕 f : 𝓢(E, F)) : 𝓢'(E, F))) := by
+          rw [TemperedDistribution.fourier_toTemperedDistributionCLM_eq (f := f)]
+    _ = 𝓕⁻ (((SchwartzMap.smulLeftCLM (F := F) g (𝓕 f)) : 𝓢(E, F)) : 𝓢'(E, F)) := by
+          congr 1
+          exact smulLeftCLM_toTemperedDistributionCLM_eq (E := E) (F := F) (g := g) (f := 𝓕 f)
+    _ = ((𝓕⁻ (SchwartzMap.smulLeftCLM (F := F) g (𝓕 f)) : 𝓢(E, F)) : 𝓢'(E, F)) := by
+          rw [TemperedDistribution.fourierInv_toTemperedDistributionCLM_eq
+            (f := SchwartzMap.smulLeftCLM (F := F) g (𝓕 f))]
+    _ = (SchwartzMap.fourierMultiplierCLM F g f : 𝓢'(E, F)) := by
+          rfl
+
+end TemperedFourierMultiplierCompat
 
 section BesselPotential
 
@@ -34,8 +209,7 @@ def besselPotential (s : ℝ) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
 variable (E F) in
 @[simp]
 theorem besselPotential_zero : besselPotential E F 0 = ContinuousLinearMap.id ℂ _ := by
-  ext f
-  simp [besselPotential]
+  simpa [besselPotential] using (fourierMultiplierCLM_const (E := E) (F := F) (c := 1))
 
 @[simp]
 theorem besselPotential_besselPotential_apply (s s' : ℝ) (f : 𝓢'(E, F)) :
@@ -47,7 +221,7 @@ theorem besselPotential_besselPotential_apply (s s' : ℝ) (f : 𝓢'(E, F)) :
   simp only [Pi.mul_apply]
   norm_cast
   calc
-    _ = (1 + ‖x‖ ^ 2) ^ (s / 2 + s' / 2) := by
+    _ = (1 + ‖x‖ ^ 2) ^ (s' / 2 + s / 2) := by
       rw [← Real.rpow_add (by positivity)]
     _ = _ := by congr; ring
 
@@ -63,17 +237,28 @@ theorem besselPotential_neg_two_laplacian_eq (f : 𝓢'(E, F)) :
       -(2 * π) ^ 2 * ‖x‖ ^ 2 * (1 + ‖x‖ ^ 2) ^ (-1 : ℝ)) f := calc
   _ = -(2 * π) ^ 2 • (fourierMultiplierCLM F
       (fun x ↦ Complex.ofReal <| (‖x‖ ^ 2) * (1 + ‖x‖ ^ 2) ^ (- (1 : ℝ)))) f := by
+    have hnormSq : (fun x : E ↦ Complex.ofReal (‖x‖ ^ 2)).HasTemperateGrowth := by
+      exact Function.HasTemperateGrowth.comp
+        (Function.RCLike.hasTemperateGrowth_ofReal ℂ)
+        (Function.hasTemperateGrowth_norm_sq (H := E))
     rw [laplacian_eq_fourierMultiplierCLM, besselPotential,
-      ContinuousLinearMap.map_smul_of_tower,
-      fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) (by fun_prop)]
-    congr
-    ext x
-    simp
+      ContinuousLinearMap.map_smul]
+    rw [fourierMultiplierCLM_fourierMultiplierCLM_apply
+      (E := E) (F := F)
+      (g₁ := fun x ↦ ((1 + ‖x‖ ^ 2) ^ (-2 / 2) : ℝ))
+      (g₂ := fun x ↦ Complex.ofReal (‖x‖ ^ 2))
+      (hg₁ := by fun_prop) (hg₂ := hnormSq)]
+    congr 2
+    · norm_num
+    · congr 1
+      funext x
+      simp [mul_comm]
   _ = _ := by
     rw [← Complex.coe_smul, ← fourierMultiplierCLM_smul_apply (by fun_prop)]
-    congr
-    ext x
-    simp [mul_assoc]
+    congr 1
+    congr 1
+    funext x
+    simp [smul_eq_mul, mul_comm, mul_left_comm]
 
 end normed
 
@@ -96,6 +281,163 @@ end BesselPotential
 section normed
 
 variable [NormedSpace ℂ F] [CompleteSpace F]
+
+omit [CompleteSpace F] in
+private lemma toReal_eLpNorm_two_eq (h : 𝓢(E, F)) :
+    ENNReal.toReal (eLpNorm h (2 : ℝ≥0∞) (volume : Measure E)) =
+      (∫ ξ : E, ‖h ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ ((2 : ℝ)⁻¹) := by
+  have hm : MemLp (fun ξ : E => h ξ) (2 : ℝ≥0∞) (volume : Measure E) :=
+    h.memLp (p := (2 : ℝ≥0∞)) (μ := (volume : Measure E))
+  have hnonneg :
+      0 ≤ (∫ ξ : E, ‖h ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ ((2 : ℝ)⁻¹) := by
+    positivity
+  have he :
+      eLpNorm h (2 : ℝ≥0∞) (volume : Measure E) =
+        ENNReal.ofReal
+          ((∫ ξ : E, ‖h ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ ((2 : ℝ)⁻¹)) := by
+    simpa using
+      (MeasureTheory.MemLp.eLpNorm_eq_integral_rpow_norm
+        (μ := (volume : Measure E))
+        (hp1 := (by norm_num))
+        (hp2 := (by norm_num))
+        hm)
+  rw [he]
+  simpa using (ENNReal.toReal_ofReal hnonneg)
+
+omit [CompleteSpace F] in
+private lemma integral_norm_rpow_two_rpow_inv_eq_norm_toLp (h : 𝓢(E, F)) :
+    (∫ ξ : E, ‖h ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ))
+      = ‖h.toLp 2 (volume : Measure E)‖ := by
+  have hnorm :=
+    (SchwartzMap.norm_toLp (f := h) (p := (2 : ℝ≥0∞)) (μ := (volume : Measure E))).symm
+  simpa using (toReal_eLpNorm_two_eq (h := h)).symm.trans hnorm
+
+/-- Generic weighted Sobolev/Fourier pointwise control on scalar Schwartz functions.
+
+If `w, wInv : E → ℂ` satisfy `‖w ξ‖ * ‖wInv ξ‖ = 1`, with `w ∈ L²` and
+`wInv` of temperate growth, then pointwise values are controlled by the weighted `L²` Fourier
+norm:
+
+`‖f x‖ ≤ ‖w‖_{L²} * ‖wInv • 𝓕 f‖_{L²}`.
+
+This packages the weighted Cauchy–Schwarz step used in Sobolev embeddings independently of any
+specific choice of weight.
+-/
+theorem SchwartzMap.norm_apply_le_weightedFourier_toLp_two
+    {w wInv : E → ℂ}
+    (hw_memLp : MemLp w (ENNReal.ofReal (2 : ℝ)) (volume : Measure E))
+    (hwInv_growth : wInv.HasTemperateGrowth)
+    (hw_mul_inv : ∀ ξ : E, ‖w ξ‖ * ‖wInv ξ‖ = 1)
+    (f : 𝓢(E, ℂ)) (x : E) :
+    ‖f x‖ ≤
+      ((∫ ξ : E, ‖w ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ))) *
+        ‖(SchwartzMap.smulLeftCLM (F := ℂ) wInv (𝓕 f)).toLp 2 (volume : Measure E)‖ := by
+  have hfourierInv :
+      f x = ∫ ξ : E, 𝐞 ⟪ξ, x⟫ • (𝓕 f) ξ := by
+    have hx : f x = (𝓕⁻ (𝓕 f)) x := by simp
+    have hx' :
+        (𝓕⁻ (𝓕 f)) x = 𝓕⁻ ((𝓕 f : 𝓢(E, ℂ)) : E → ℂ) x := by
+      simpa using congrArg (fun h => h x) (SchwartzMap.fourierInv_coe (f := 𝓕 f))
+    have hx'' :
+        𝓕⁻ ((𝓕 f : 𝓢(E, ℂ)) : E → ℂ) x = ∫ ξ : E, 𝐞 ⟪ξ, x⟫ • (𝓕 f) ξ := by
+      simpa using (Real.fourierInv_eq (f := ((𝓕 f : 𝓢(E, ℂ)) : E → ℂ)) x)
+    exact hx.trans (hx'.trans hx'')
+  have hnorm_int :
+      ‖f x‖ ≤ ∫ ξ : E, ‖(𝓕 f) ξ‖ ∂(volume : Measure E) := by
+    have hnorm :
+        ‖∫ ξ : E, 𝐞 ⟪ξ, x⟫ • (𝓕 f) ξ ∂(volume : Measure E)‖
+          ≤ ∫ ξ : E, ‖(𝓕 f) ξ‖ ∂(volume : Measure E) := by
+      refine (norm_integral_le_integral_norm (f := fun ξ : E => 𝐞 ⟪ξ, x⟫ • (𝓕 f) ξ)).trans ?_
+      refine le_of_eq ?_
+      refine integral_congr_ae ?_
+      filter_upwards with ξ
+      simp
+    simpa [hfourierInv] using hnorm
+
+  let hW : 𝓢(E, ℂ) := SchwartzMap.smulLeftCLM (F := ℂ) wInv (𝓕 f)
+  have hW_apply (ξ : E) : hW ξ = wInv ξ • (𝓕 f) ξ := by
+    simpa [hW] using
+      (SchwartzMap.smulLeftCLM_apply_apply (F := ℂ)
+        (g := wInv) (hg := hwInv_growth) (𝓕 f) ξ)
+  have hmem_hW : MemLp hW (ENNReal.ofReal (2 : ℝ)) (volume : Measure E) := by
+    simpa [hW] using
+      (hW.memLp (p := (ENNReal.ofReal (2 : ℝ))) (μ := (volume : Measure E)))
+  have hmem_weighted :
+      MemLp (fun ξ : E ↦ wInv ξ • (𝓕 f) ξ)
+        (ENNReal.ofReal (2 : ℝ)) (volume : Measure E) := by
+    have hAE :
+        (fun ξ : E ↦ wInv ξ • (𝓕 f) ξ) =ᶠ[ae (volume : Measure E)] hW := by
+      refine Filter.Eventually.of_forall ?_
+      intro ξ
+      exact (hW_apply ξ).symm
+    exact (MeasureTheory.memLp_congr_ae hAE).2 hmem_hW
+
+  have hpq : (2 : ℝ).HolderConjugate (2 : ℝ) := Real.HolderConjugate.two_two
+  have hholder :
+      (∫ ξ : E, ‖w ξ‖ * ‖wInv ξ • (𝓕 f) ξ‖ ∂(volume : Measure E))
+        ≤ ((∫ ξ : E, ‖w ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ))) *
+            ((∫ ξ : E, ‖wInv ξ • (𝓕 f) ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ))) := by
+    exact integral_mul_norm_le_Lp_mul_Lq
+      (μ := (volume : Measure E))
+      (f := w)
+      (g := (fun ξ : E ↦ wInv ξ • (𝓕 f) ξ : E → ℂ))
+      (p := (2 : ℝ))
+      (q := (2 : ℝ))
+      hpq
+      hw_memLp
+      hmem_weighted
+  have hfactor :
+      (fun ξ : E ↦ ‖w ξ‖ * ‖wInv ξ • (𝓕 f) ξ‖)
+        = (fun ξ : E ↦ ‖(𝓕 f) ξ‖) := by
+    funext ξ
+    calc
+      ‖w ξ‖ * ‖wInv ξ • (𝓕 f) ξ‖ = ‖w ξ‖ * (‖wInv ξ‖ * ‖(𝓕 f) ξ‖) := by
+        simp
+      _ = (‖w ξ‖ * ‖wInv ξ‖) * ‖(𝓕 f) ξ‖ := by ring
+      _ = ‖(𝓕 f) ξ‖ := by simp [hw_mul_inv ξ]
+  have hweighted :
+      (∫ ξ : E, ‖(𝓕 f) ξ‖ ∂(volume : Measure E))
+        ≤ ((∫ ξ : E, ‖w ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ))) *
+            ((∫ ξ : E, ‖wInv ξ • (𝓕 f) ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ))) := by
+    have hEq :
+        (∫ ξ : E, ‖(𝓕 f) ξ‖ ∂(volume : Measure E))
+          = ∫ ξ : E, ‖w ξ‖ * ‖wInv ξ • (𝓕 f) ξ‖ ∂(volume : Measure E) := by
+      refine integral_congr_ae ?_
+      exact Filter.Eventually.of_forall (fun ξ => by
+        calc
+          ‖(𝓕 f) ξ‖ = (‖w ξ‖ * ‖wInv ξ‖) * ‖(𝓕 f) ξ‖ := by simp [hw_mul_inv ξ]
+          _ = ‖w ξ‖ * (‖wInv ξ‖ * ‖(𝓕 f) ξ‖) := by ring
+          _ = ‖w ξ‖ * ‖wInv ξ • (𝓕 f) ξ‖ := by simp)
+    rw [hEq]
+    exact hholder
+  have hW_eq :
+      ((∫ ξ : E, ‖wInv ξ • (𝓕 f) ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ)))
+        = ‖hW.toLp 2 (volume : Measure E)‖ := by
+    have hEqInt :
+        (∫ ξ : E, ‖hW ξ‖ ^ (2 : ℝ) ∂(volume : Measure E))
+          = ∫ ξ : E, ‖wInv ξ • (𝓕 f) ξ‖ ^ (2 : ℝ) ∂(volume : Measure E) := by
+      refine integral_congr_ae ?_
+      exact Filter.Eventually.of_forall (fun ξ => by
+        change ‖hW ξ‖ ^ (2 : ℝ) = ‖wInv ξ • (𝓕 f) ξ‖ ^ (2 : ℝ)
+        rw [hW_apply ξ])
+    calc
+      ((∫ ξ : E, ‖wInv ξ • (𝓕 f) ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ)))
+          = (∫ ξ : E, ‖hW ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ)) := by
+              rw [hEqInt]
+      _ = ‖hW.toLp 2 (volume : Measure E)‖ :=
+        integral_norm_rpow_two_rpow_inv_eq_norm_toLp (h := hW)
+  have hweighted' :
+      (∫ ξ : E, ‖(𝓕 f) ξ‖ ∂(volume : Measure E))
+        ≤ ((∫ ξ : E, ‖w ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ))) *
+            ‖hW.toLp 2 (volume : Measure E)‖ := by
+    rw [hW_eq] at hweighted
+    exact hweighted
+  have hweighted'' :
+      (∫ ξ : E, ‖(𝓕 f) ξ‖ ∂(volume : Measure E))
+        ≤ ((∫ ξ : E, ‖w ξ‖ ^ (2 : ℝ) ∂(volume : Measure E)) ^ (1 / (2 : ℝ))) *
+            ‖(SchwartzMap.smulLeftCLM (F := ℂ) wInv (𝓕 f)).toLp 2 (volume : Measure E)‖ := by
+    simpa only [hW] using hweighted'
+  exact le_trans hnorm_int hweighted''
 
 def MemSobolev (s : ℝ) (p : ℝ≥0∞) [hp : Fact (1 ≤ p)] (f : 𝓢'(E, F)) : Prop :=
   ∃ (f' : Lp F p (volume : Measure E)),
@@ -342,7 +684,7 @@ theorem memSobolev_two_iff_fourier {s : ℝ} {f : 𝓢'(E, F)} :
     rw [hf', Lp.fourier_toTemperedDistribution_eq f']
   · intro ⟨f', hf'⟩
     use 𝓕⁻ f'
-    rw [besselPotential, TemperedDistribution.fourierMultiplierCLM_apply]
+    rw [besselPotential, fourierMultiplierCLM_apply]
     apply_fun 𝓕⁻ at hf'
     rw [hf', Lp.fourierInv_toTemperedDistribution_eq f']
 

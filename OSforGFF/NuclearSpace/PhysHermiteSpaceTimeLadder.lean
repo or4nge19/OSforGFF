@@ -226,7 +226,7 @@ noncomputable def lower (i : Fin STDimension) (n : ℕ) : ℕ :=
 
 /-! ## Coordinate multiplication on the 4D eigenfunctions -/
 
-lemma coord0_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
+private lemma coord0_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
     (coordCLM 0 x) * eigenfunctionRealSpaceTime ξ hξ n x =
       (ξ / 2) * eigenfunctionRealSpaceTime ξ hξ (raise₀ n) x
         + (unpair₄₁ n * ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₀ n) x := by
@@ -260,7 +260,7 @@ lemma coord0_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ
           + (unpair₄₁ n * ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₀ n) x := by
           simp [habcdRaise, habcdLower]
 
-lemma coord1_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
+private lemma coord1_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
     (coordCLM 1 x) * eigenfunctionRealSpaceTime ξ hξ n x =
       (ξ / 2) * eigenfunctionRealSpaceTime ξ hξ (raise₁ n) x
         + (unpair₄₂ n * ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₁ n) x := by
@@ -296,7 +296,7 @@ lemma coord1_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ
           + (unpair₄₂ n * ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₁ n) x := by
           simp [habcdRaise, habcdLower]
 
-lemma coord2_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
+private lemma coord2_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
     (coordCLM 2 x) * eigenfunctionRealSpaceTime ξ hξ n x =
       (ξ / 2) * eigenfunctionRealSpaceTime ξ hξ (raise₂ n) x
         + (unpair₄₃ n * ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₂ n) x := by
@@ -330,7 +330,7 @@ lemma coord2_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ
           + (unpair₄₃ n * ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₂ n) x := by
           simp [habcdRaise, habcdLower]
 
-lemma coord3_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
+private lemma coord3_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
     (coordCLM 3 x) * eigenfunctionRealSpaceTime ξ hξ n x =
       (ξ / 2) * eigenfunctionRealSpaceTime ξ hξ (raise₃ n) x
         + (unpair₄₄ n * ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₃ n) x := by
@@ -369,15 +369,27 @@ lemma coord_mul_eigenfunctionRealSpaceTime (ξ : ℝ) (hξ : ξ ≠ 0)
     (coordCLM i x) * eigenfunctionRealSpaceTime ξ hξ n x =
       (ξ / 2) * eigenfunctionRealSpaceTime ξ hξ (raise i n) x
         + ((((idx n i : ℕ) : ℝ) * ξ) * eigenfunctionRealSpaceTime ξ hξ (lower i n) x) := by
-  fin_cases i
-  · simpa [raise, lower, idx] using
-      (coord0_mul_eigenfunctionRealSpaceTime (ξ := ξ) (hξ := hξ) (n := n) (x := x))
-  · simpa [raise, lower, idx] using
-      (coord1_mul_eigenfunctionRealSpaceTime (ξ := ξ) (hξ := hξ) (n := n) (x := x))
-  · simpa [raise, lower, idx] using
-      (coord2_mul_eigenfunctionRealSpaceTime (ξ := ξ) (hξ := hξ) (n := n) (x := x))
-  · simpa [raise, lower, idx] using
-      (coord3_mul_eigenfunctionRealSpaceTime (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+  cases i using Fin.cases with
+  | zero =>
+      simpa [raise, lower, idx] using
+        (coord0_mul_eigenfunctionRealSpaceTime (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+  | succ i =>
+      cases i using Fin.cases with
+      | zero =>
+          simpa [raise, lower, idx] using
+            (coord1_mul_eigenfunctionRealSpaceTime (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+      | succ i =>
+          cases i using Fin.cases with
+          | zero =>
+              simpa [raise, lower, idx] using
+                (coord2_mul_eigenfunctionRealSpaceTime (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+          | succ i =>
+              cases i using Fin.cases with
+              | zero =>
+                  simpa [raise, lower, idx] using
+                    (coord3_mul_eigenfunctionRealSpaceTime (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+              | succ i =>
+                  exact (False.elim (Nat.not_lt_zero _ i.isLt))
 
 end SpaceTimeHermite
 

@@ -75,7 +75,7 @@ lemma derivCoordCLM_apply_apply (i : Fin STDimension) (f : TestFunction) (x : Sp
 
 /-! ## Line-derivative ladder for the spacetime eigenfunctions -/
 
-lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec0 (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
+private lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec0 (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
     lineDeriv ℝ (eigenfunctionRealSpaceTime ξ hξ n) x (unitVec 0) =
       (unpair₄₁ n / ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₀ n) x
         - (1 / (2 * ξ)) * eigenfunctionRealSpaceTime ξ hξ (raise₀ n) x := by
@@ -143,7 +143,7 @@ lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec0 (ξ : ℝ) (hξ : ξ ≠ 0) 
           - (1 / (2 * ξ)) * eigenfunctionRealSpaceTime ξ hξ (raise₀ n) x := by
           simp [hkLower, hkRaise, k, mul_assoc, -eigenfunctionRealSchwartz_apply]
 
-lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec1 (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
+private lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec1 (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
     lineDeriv ℝ (eigenfunctionRealSpaceTime ξ hξ n) x (unitVec 1) =
       (unpair₄₂ n / ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₁ n) x
         - (1 / (2 * ξ)) * eigenfunctionRealSpaceTime ξ hξ (raise₁ n) x := by
@@ -213,7 +213,7 @@ lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec1 (ξ : ℝ) (hξ : ξ ≠ 0) 
   -- (use `hkLower`/`hkRaise` in the reverse direction).
   simpa [hkLower, hkRaise] using this
 
-lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec2 (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
+private lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec2 (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
     lineDeriv ℝ (eigenfunctionRealSpaceTime ξ hξ n) x (unitVec 2) =
       (unpair₄₃ n / ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₂ n) x
         - (1 / (2 * ξ)) * eigenfunctionRealSpaceTime ξ hξ (raise₂ n) x := by
@@ -281,7 +281,7 @@ lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec2 (ξ : ℝ) (hξ : ξ ≠ 0) 
     ring
   simpa [hkLower, hkRaise, mul_assoc, -eigenfunctionRealSchwartz_apply] using this
 
-lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec3 (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
+private lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec3 (ξ : ℝ) (hξ : ξ ≠ 0) (n : ℕ) (x : SpaceTime) :
     lineDeriv ℝ (eigenfunctionRealSpaceTime ξ hξ n) x (unitVec 3) =
       (unpair₄₄ n / ξ) * eigenfunctionRealSpaceTime ξ hξ (lower₃ n) x
         - (1 / (2 * ξ)) * eigenfunctionRealSpaceTime ξ hξ (raise₃ n) x := by
@@ -348,15 +348,27 @@ lemma lineDeriv_eigenfunctionRealSpaceTime_unitVec (ξ : ℝ) (hξ : ξ ≠ 0)
     lineDeriv ℝ (eigenfunctionRealSpaceTime ξ hξ n) x (unitVec i) =
       ((((idx n i : ℕ) : ℝ) / ξ) * eigenfunctionRealSpaceTime ξ hξ (lower i n) x)
         - (1 / (2 * ξ)) * eigenfunctionRealSpaceTime ξ hξ (raise i n) x := by
-  fin_cases i
-  · simpa [raise, lower, idx] using
-      (lineDeriv_eigenfunctionRealSpaceTime_unitVec0 (ξ := ξ) (hξ := hξ) (n := n) (x := x))
-  · simpa [raise, lower, idx] using
-      (lineDeriv_eigenfunctionRealSpaceTime_unitVec1 (ξ := ξ) (hξ := hξ) (n := n) (x := x))
-  · simpa [raise, lower, idx] using
-      (lineDeriv_eigenfunctionRealSpaceTime_unitVec2 (ξ := ξ) (hξ := hξ) (n := n) (x := x))
-  · simpa [raise, lower, idx] using
-      (lineDeriv_eigenfunctionRealSpaceTime_unitVec3 (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+  cases i using Fin.cases with
+  | zero =>
+      simpa [raise, lower, idx] using
+        (lineDeriv_eigenfunctionRealSpaceTime_unitVec0 (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+  | succ i =>
+      cases i using Fin.cases with
+      | zero =>
+          simpa [raise, lower, idx] using
+            (lineDeriv_eigenfunctionRealSpaceTime_unitVec1 (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+      | succ i =>
+          cases i using Fin.cases with
+          | zero =>
+              simpa [raise, lower, idx] using
+                (lineDeriv_eigenfunctionRealSpaceTime_unitVec2 (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+          | succ i =>
+              cases i using Fin.cases with
+              | zero =>
+                  simpa [raise, lower, idx] using
+                    (lineDeriv_eigenfunctionRealSpaceTime_unitVec3 (ξ := ξ) (hξ := hξ) (n := n) (x := x))
+              | succ i =>
+                  exact (False.elim (Nat.not_lt_zero _ i.isLt))
 
 /-! ## Coefficient ladder for coordinate derivatives -/
 
