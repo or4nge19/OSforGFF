@@ -14,6 +14,8 @@ This repository also develops **dimension-agnostic** and **vector-valued** abstr
 - an abstract Gel'fand triple interface `N ⊂ H ⊂ N'` for Minlos/Gaussian measure theory,
 - vector-valued Schwartz test functions `𝓢(E, V)` and weak-dual distribution spaces `WeakDual 𝕜 𝓢(E, V)`,
   with lifted global internal symmetries (constant gauge rotations / matrices) acting on fields.
+- a dimension-generic, multi-index Hermite/coefficient layer (preferred API) based on indices
+  `α : Fin d → ℕ` and the generic rapid-decay model `RapidDecaySeqIndex.space (base_d d)`.
 
 ## Master Theorem
 
@@ -44,6 +46,15 @@ additional hypotheses beyond `m > 0`.
 
 In this repository, `SchwartzNuclearInclusion` is discharged in the spacetime Hermite model; see
 [`OSforGFF/NuclearSpace/PhysHermiteSpaceTimeSchwartzNuclearInclusion.lean`](OSforGFF/NuclearSpace/PhysHermiteSpaceTimeSchwartzNuclearInclusion.lean).
+
+The **dimension-generic** (multi-index) Hermite API lives in:
+
+- [`OSforGFF/NuclearSpace/PhysHermiteMulti.lean`](OSforGFF/NuclearSpace/PhysHermiteMulti.lean)
+- [`OSforGFF/NuclearSpace/PhysHermiteMultiLadder.lean`](OSforGFF/NuclearSpace/PhysHermiteMultiLadder.lean)
+- [`OSforGFF/NuclearSpace/PhysHermiteMultiCoeffSeminorm.lean`](OSforGFF/NuclearSpace/PhysHermiteMultiCoeffSeminorm.lean)
+- [`OSforGFF/NuclearSpace/PhysHermiteMultiCoeffNuclearity.lean`](OSforGFF/NuclearSpace/PhysHermiteMultiCoeffNuclearity.lean)
+- [`OSforGFF/NuclearSpace/RapidDecaySeqIndex.lean`](OSforGFF/NuclearSpace/RapidDecaySeqIndex.lean)
+- [`OSforGFF/NuclearSpace/RapidDecaySeqMultiIndex.lean`](OSforGFF/NuclearSpace/RapidDecaySeqMultiIndex.lean)
 
 The repository also contains an **optional hypothesis package** `OSforGFF/MinlosAxiomatic.lean` assuming the full Minlos theorem as a typeclass `MinlosTheorem`, but the proved GFF pipeline does **not** rely on it.
 
