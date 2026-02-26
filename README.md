@@ -8,6 +8,13 @@ and proofs are formalized in Lean 4 / Mathlib, following the conventions and
 methods of proof in Glimm and Jaffe, *Quantum Physics: A Functional Integral
 Point of View* (Springer, 1987).
 
+This repository also develops **dimension-agnostic** and **vector-valued** abstraction layers:
+
+- a coordinate-free Euclidean time-direction API for OS-style reflection/translation,
+- an abstract Gel'fand triple interface `N ⊂ H ⊂ N'` for Minlos/Gaussian measure theory,
+- vector-valued Schwartz test functions `𝓢(E, V)` and weak-dual distribution spaces `WeakDual 𝕜 𝓢(E, V)`,
+  with lifted global internal symmetries (constant gauge rotations / matrices) acting on fields.
+
 ## Master Theorem
 
 ```lean
@@ -40,9 +47,17 @@ In this repository, `SchwartzNuclearInclusion` is discharged in the spacetime He
 
 The repository also contains an **optional hypothesis package** `OSforGFF/MinlosAxiomatic.lean` assuming the full Minlos theorem as a typeclass `MinlosTheorem`, but the proved GFF pipeline does **not** rely on it.
 
+The measure-theoretic pipeline is factored through an abstract Gel'fand triple API in:
+
+- [`OSforGFF/Minlos/GelfandTriple.lean`](OSforGFF/Minlos/GelfandTriple.lean)
+
+and the proved GFF construction is provided as a concrete instance of that API in:
+
+- [`OSforGFF/GFFMconstructProved.lean`](OSforGFF/GFFMconstructProved.lean)
+
 ## Project Structure
 
-The 47 library files are organized into layers, with imports flowing from
+The library files are organized into layers, with imports flowing from
 earlier to later sections. The dependency graph is in [dependency/import_graph.svg](dependency/import_graph.svg).
 
 ---
@@ -90,6 +105,9 @@ Core type definitions and infrastructure for the formalization.
 | File | Contents |
 |------|----------|
 | [Basic](OSforGFF/Basic.lean) | SpaceTime (ℝ⁴), TestFunction, FieldConfiguration, distribution pairing, spatial geometry |
+| [Spacetime/Defs](OSforGFF/Spacetime/Defs.lean) | Dimension-agnostic aliases for reference measure and Schwartz test functions |
+| [Spacetime/TimeDirection](OSforGFF/Spacetime/TimeDirection.lean) | Coordinate-free time direction + reflection API for OS axioms |
+| [Spacetime/VectorValued](OSforGFF/Spacetime/VectorValued.lean) | Vector-valued Schwartz/distribution spaces + lifted global internal symmetries |
 | [Euclidean](OSforGFF/Euclidean.lean) | Euclidean group E(d) and its action on test functions |
 | [DiscreteSymmetry](OSforGFF/DiscreteSymmetry.lean) | Time reflection Θ and discrete symmetries |
 | [SpacetimeDecomp](OSforGFF/SpacetimeDecomp.lean) | Measure-preserving SpaceTime ≃ ℝ × ℝ³ decomposition |
@@ -266,10 +284,12 @@ lake build
 
 Requires Lean 4 and Mathlib (pinned via `lake-manifest.json`).
 
-## Planned Generalizations
+## Planned Generalizations (MC suggestions)
 
-1. Other spacetime dimensions, as discussed in [docs/dimension_dependence.md](docs/dimension_dependence.md)
-2. Explicit construction of the measure not using Minlos
+With the foundational Euclidean QFT axioms are discharged for the free field, ongoing development focuses on:
+1. **Fully Dimension-Agnostic Instantiations:** Completing the migration of the 4D spacetime Hermite model to generic `d`-dimensional Euclidean spaces.
+2. **Infinite-Dimensional Stochastic Calculus:** Integrating Cameron-Martin spaces and Gaussian Integration by Parts (GIBP) on real Hilbert spaces. 
+3. **Interacting QFTs:** Leveraging the abstract Gel'fand triple API and GIBP to formalize Wick-ordered products and construct interacting measures (e.g., the $P(\phi)_2$ model).
 
 ## Authors
 
