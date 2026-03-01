@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Matteo Cipollina. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Matteo Cipollina
+Authors: Matteo Cipollina, Michael R. Douglas
 -/
 import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.InnerProductSpace.LinearMap
@@ -93,16 +93,16 @@ def translateAlong (t : ℝ) (x : E) : E :=
 
 lemma translateAlong_apply (t : ℝ) (x : E) : τ.translateAlong t x = x + t • τ.vec := rfl
 
-@[simp] 
+@[simp]
 lemma translateAlong_zero (x : E) : τ.translateAlong 0 x = x := by
   simp [translateAlong]
 
-@[simp] 
+@[simp]
 lemma translateAlong_add (s t : ℝ) (x : E) :
     τ.translateAlong (s + t) x = τ.translateAlong s (τ.translateAlong t x) := by
   simp [translateAlong, add_smul, add_left_comm, add_comm]
 
-@[simp] 
+@[simp]
 lemma translateAlong_neg_cancel (t : ℝ) (x : E) :
     τ.translateAlong (-t) (τ.translateAlong t x) = x := by
   simp [translateAlong, add_assoc]
@@ -154,14 +154,14 @@ def translateAlongTestFunction {𝕜 : Type*} [RCLike 𝕜] {F : Type*}
     (sub_const_hasTemperateGrowth (E := E) (t • τ.vec))
     (sub_const_antilipschitz (E := E) (t • τ.vec))
 
-@[simp] 
+@[simp]
 lemma translateAlongTestFunction_apply {𝕜 : Type*} [RCLike 𝕜] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
     (t : ℝ) (f : SchwartzMap E F) (x : E) :
     τ.translateAlongTestFunction (𝕜 := 𝕜) (F := F) t f x = f (x - t • τ.vec) := by
   simp [TimeDirection.translateAlongTestFunction]
 
-@[simp] 
+@[simp]
 lemma translateAlongTestFunction_zero {𝕜 : Type*} [RCLike 𝕜] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] :
     τ.translateAlongTestFunction (𝕜 := 𝕜) (F := F) 0 =
@@ -186,11 +186,11 @@ def nonnegativeHalfSpace : Set E :=
 def nonpositiveHalfSpace : Set E :=
   {x | τ.timeCoord x ≤ 0}
 
-@[simp] 
+@[simp]
 lemma mem_nonnegativeHalfSpace (x : E) :
     x ∈ τ.nonnegativeHalfSpace ↔ 0 ≤ τ.timeCoord x := Iff.rfl
 
-@[simp] 
+@[simp]
 lemma mem_nonpositiveHalfSpace (x : E) :
     x ∈ τ.nonpositiveHalfSpace ↔ τ.timeCoord x ≤ 0 := Iff.rfl
 
@@ -242,13 +242,13 @@ def reflectTestFunction {𝕜 : Type*} [RCLike 𝕜] {F : Type*}
     (D := E) (E := E) (F := F)
     (g := ops.reflect.toContinuousLinearEquiv)
 
-@[simp] 
+@[simp]
 lemma reflectTestFunction_apply {𝕜 : Type*} [RCLike 𝕜] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
     [FiniteDimensional ℝ E] (f : SchwartzMap E F) (x : E) :
     ops.reflectTestFunction (𝕜 := 𝕜) (F := F) f x = f (ops.reflect x) := rfl
 
-@[simp] 
+@[simp]
 lemma reflectTestFunction_involutive {𝕜 : Type*} [RCLike 𝕜] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
     [FiniteDimensional ℝ E] (f : SchwartzMap E F) :
