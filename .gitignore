@@ -10,7 +10,6 @@ MathlibStyle.md
 # Vendored/snapshot upstream repos kept in workspace for reference.
 # These should be built in their own directories (or brought in as Lake deps),
 # not committed as part of the proved `OSforGFF` package.
-/PhysLean-master/
 /gaussian-field-main/
 /QFTFramework-main/
 /GFF-main/
