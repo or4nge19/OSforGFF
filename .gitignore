@@ -6,3 +6,19 @@ scripts/
 MathlibDocumentationStyle.md
 MathlibNamingConventions.md
 MathlibStyle.md
+
+# Vendored/snapshot upstream repos kept in workspace for reference.
+# These should be built in their own directories (or brought in as Lake deps),
+# not committed as part of the proved `OSforGFF` package.
+/PhysLean-master/
+/gaussian-field-main/
+/QFTFramework-main/
+/GFF-main/
+/GFF4D-main/
+/OSreconstruction-1-main/
+
+# Local upstream clones / scratch space (not part of proved package).
+/_upstream/
+
+# Local build helper (kept untracked).
+/physlean-packages-override.json

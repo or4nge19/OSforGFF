@@ -13,7 +13,6 @@ import «OSforGFF».QuantitativeDecay
 import «OSforGFF».ComplexTestFunction
 import «OSforGFF».SpacetimeDecomp
 import «OSforGFF».TimeTranslation
-import «OSforGFF».Spacetime.Defs
 import «OSforGFF».Spacetime.VectorValued
 import «OSforGFF».Spacetime.TimeDirection
 
@@ -112,6 +111,12 @@ import «OSforGFF».NuclearSpace.PhysHermiteSpaceTimeSchwartzNuclearInclusion
 -- GFF construction
 import «OSforGFF».GFFMconstruct
 import «OSforGFF».GFFMconstructProved
+import «OSforGFF».GFF.Package
+import «OSforGFF».GFF.PackageProved
+import «OSforGFF».GFF.PackageOS0
+import «OSforGFF».GFF.PackageOS0Proved
+import «OSforGFF».GFF.ComplexCharacteristic
+import «OSforGFF».GFF.ComplexCharacteristicProved
 import «OSforGFF».GaussianMoments
 import «OSforGFF».GFFIsGaussian
 import «OSforGFF».GaussianFreeField
@@ -138,3 +143,6 @@ import «OSforGFF».OS4_Ergodicity
 -- Master theorem
 import «OSforGFF».GFFmaster
 import «OSforGFF».GFFmasterProved
+
+-- Integration checks (ensures consolidated PhysLean APIs are used)
+import «OSforGFF».ApplicationChecks

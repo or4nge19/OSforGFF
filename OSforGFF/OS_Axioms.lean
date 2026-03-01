@@ -46,6 +46,7 @@ import OSforGFF.ComplexTestFunction
 import OSforGFF.TimeTranslation
 import OSforGFF.SchwingerTwoPointFunction
 import OSforGFF.Spacetime.TimeDirection
+import OSforGFF.QFT.EuclideanQFT
 
 /-!
 ## Osterwalder-Schrader Axioms
@@ -236,10 +237,9 @@ namespace QFT
 /-- A Euclidean QFT in the Glimm–Jaffe sense: a probability measure on field configurations
 together with proofs of the Osterwalder–Schrader axioms.
 
-This is a lightweight “interface” container: the *API* is `SatisfiesAllOS`, and concrete models
-(Hermite, Fourier/momentum, lattice, …) can be expressed as inhabitants of this structure. -/
-structure EuclideanQFT : Type where
-  μ : ProbabilityMeasure FieldConfiguration
-  os : SatisfiesAllOS μ
+This is the `OSforGFF` specialization of the lightweight, reusable container
+`QFT.EuclideanQFTModel`. -/
+abbrev EuclideanQFT :=
+  EuclideanQFTModel FieldConfiguration SatisfiesAllOS
 
 end QFT

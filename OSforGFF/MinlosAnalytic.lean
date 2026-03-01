@@ -44,9 +44,6 @@ noncomputable section
 
 namespace MinlosAnalytic
 
--- Ensure FieldConfiguration is a BorelSpace since it uses the borel measurable space
-instance : BorelSpace FieldConfiguration := ⟨rfl⟩
-
 /-- A real symmetric, positive semidefinite covariance form on real test functions,
     together with a proof that the associated Gaussian characteristic functional
     exp(-½Q(f,f)) is positive definite. -/
@@ -65,11 +62,18 @@ def negMap : FieldConfiguration → FieldConfiguration := fun ω => -ω
 
 /-- The negation map is measurable -/
 lemma negMap_measurable : Measurable negMap := by
-  -- The negation map is continuous on WeakDual, hence measurable
-  -- WeakDual is a topological vector space and negation is continuous
-  apply Continuous.measurable
-  -- negMap is the same as the continuous linear map x ↦ -x
-  exact continuous_neg
+  -- With the cylindrical σ-algebra, measurability is proved by checking measurability of all
+  -- evaluation maps.
+  refine fieldConfiguration_measurable_of_eval_measurable (g := negMap) ?_
+  intro φ
+  have hφ : Measurable (fun ω : FieldConfiguration => ω φ) :=
+    measurable_distributionPairing φ
+  have hneg : Measurable (fun ω : FieldConfiguration => -(ω φ)) :=
+    hφ.neg
+  have hEq : (fun ω : FieldConfiguration => (-ω) φ) = (fun ω : FieldConfiguration => -(ω φ)) := by
+    funext ω
+    rfl
+  simpa [negMap, hEq] using hneg
 
 /-- Symmetry under global sign flip induced by the real Gaussian CF.
     Note: Requires NuclearSpace instance for Minlos uniqueness theorem. -/
@@ -103,7 +107,7 @@ lemma integral_neg_invariance
     have h_aestrongly_measurable : AEStronglyMeasurable (fun ω => Complex.exp (Complex.I * (distributionPairing ω g))) μneg := by
       -- Inner map: ω ↦ distributionPairing ω g is measurable via continuous linear map
       have h_inner_meas : Measurable (fun ω : FieldConfiguration => distributionPairing ω g) := by
-        simpa [distributionPairingCLM_apply] using (distributionPairingCLM g).continuous.measurable
+        simpa [distributionPairing] using measurable_distributionPairing g
       -- Outer map: x ↦ exp(I * x) is continuous hence measurable
       have h_cont_mulI : Continuous (fun x : ℝ => (Complex.I : ℂ) * (x : ℂ)) :=
         continuous_const.mul continuous_ofReal

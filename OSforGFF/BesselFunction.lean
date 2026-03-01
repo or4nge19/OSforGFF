@@ -390,9 +390,9 @@ lemma besselK1_asymptotic (z : ℝ) (hz : 1 ≤ z) :
             simpa using hasDerivAt_sinh x |>.const_mul (exp (-z))
           exact hd.hasDerivWithinAt)
         ((continuous_const.mul continuous_cosh).intervalIntegrable 0 1)
-      simp only [sinh_zero, mul_zero, sub_zero] at h
       rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le (by norm_num : (0:ℝ) ≤ 1)]
-      exact h
+      -- `h` is stated with pointwise function multiplication; rewrite to the scalar form.
+      simpa [Pi.mul_apply, sinh_zero] using h
     linarith
   -- Part 2: ∫₁^∞ f ≤ 2 exp(-z) using the same FTC argument as in besselK1_mul_self_le
   have h_part2 : ∫ t in Ici 1, f t ≤ 2 * exp (-z) := by

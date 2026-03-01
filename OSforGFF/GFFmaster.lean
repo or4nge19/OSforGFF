@@ -33,6 +33,8 @@ import OSforGFF.OS2_GFF
 import OSforGFF.OS4_Clustering
 import OSforGFF.OS4_Ergodicity
 import OSforGFF.NuclearSpace.Schwartz
+import OSforGFF.GFF.PackageOS4Proved
+import OSforGFF.GFF.PackageOSAll
 
 open scoped BigOperators
 
@@ -55,22 +57,11 @@ This theorem is conditional on the standard nuclearity package for `TestFunction
 via the Kolmogorov+nuclear support theorem. -/
 theorem gaussianFreeField_satisfies_all_OS_axioms (m : ℝ) [Fact (0 < m)]
     [NuclearSpaceStd TestFunction] :
-    SatisfiesAllOS (μ_GFF m) where
-  -- OS0 from the holomorphic integral theorem (differentiation under the integral)
-  os0 := QFT.gaussianFreeField_satisfies_OS0 m
-  -- OS1 from the free field theorem using Fourier/momentum space methods
-  os1 := gaussianFreeField_satisfies_OS1_revised m
-  -- OS2 from Euclidean invariance of free covariance
-  os2 := gaussian_satisfies_OS2 (μ_GFF m)
-    (by simpa using isGaussianGJ_gaussianFreeField_free m)
-    (QFT.CovarianceEuclideanInvariantℂ_μ_GFF m)
-  -- OS3 from the Schur-Hadamard argument
-  os3 := QFT.gaussianFreeField_OS3_real m
-  -- OS4 Clustering (Gaussian factorization and covariance decay)
-  os4_clustering := QFT.gaussianFreeField_satisfies_OS4 m
-  -- OS4 Ergodicity: polynomial clustering (α=6) implies ergodicity
-  os4_ergodicity := OS4_Ergodicity.OS4_PolynomialClustering_implies_OS4_Ergodicity m
-    (QFT.gaussianFreeField_satisfies_OS4_PolynomialClustering m 6 (by norm_num))
+    SatisfiesAllOS (μ_GFF m) := by
+  -- Assemble OS0–OS4 via the `GFF.PackageOS4` interface.
+  -- This is the stable “integration joint” for alternative Gaussian measure backends.
+  simpa [μ_GFF, gaussianFreeField_free] using
+    (OSforGFF.GFF.PackageOS4.satisfiesAllOS (m := m) (P := OSforGFF.GFF.packageOS4Proved (m := m)))
 
 /-!
 For the Schwartz test-function space, the *canonical* remaining hypothesis is packaged as

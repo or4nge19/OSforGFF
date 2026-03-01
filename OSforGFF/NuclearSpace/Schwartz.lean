@@ -8,7 +8,6 @@ import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
 import OSforGFF.Basic
-import OSforGFF.Spacetime.Defs
 import OSforGFF.NuclearSpace.Defs
 import OSforGFF.NuclearSpace.Std
 import OSforGFF.NuclearSpace.Transport
