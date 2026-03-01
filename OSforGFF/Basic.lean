@@ -181,8 +181,9 @@ These lemmas are used throughout the OS/GFF development in place of `Continuous.
 
 theorem measurable_distributionPairing (a : TestFunction) :
     @Measurable FieldConfiguration ℝ instMeasurableSpaceFieldConfiguration _ (fun ω => ω a) := by
-  intro s hs
-  exact ⟨(fun f => f a) ⁻¹' s, measurable_pi_apply a hs, rfl⟩
+  -- The measurable space on `FieldConfiguration` is the cylindrical one, so evaluation maps are
+  -- measurable by construction.
+  simpa using (OSforGFF.measurable_weakDual_eval (𝕜 := ℝ) (E := TestFunction) a)
 
 theorem aemeasurable_distributionPairing (a : TestFunction) (μ : Measure FieldConfiguration) :
     AEMeasurable (fun ω : FieldConfiguration => ω a) μ :=
@@ -192,12 +193,8 @@ theorem fieldConfiguration_measurable_of_eval_measurable
     {X : Type*} [MeasurableSpace X] (g : X → FieldConfiguration)
     (h : ∀ φ : TestFunction, Measurable (fun x => g x φ)) :
     Measurable g := by
-  rw [measurable_iff_comap_le]
-  -- `FieldConfiguration` is equipped with the cylindrical σ-algebra `comap (fun ω f => ω f) pi`.
-  -- Reduce measurability to measurability of all evaluation maps.
-  show (MeasurableSpace.comap (fun ω f => ω f) MeasurableSpace.pi).comap g ≤ _
-  rw [MeasurableSpace.comap_comp]
-  exact (measurable_pi_lambda _ h).comap_le
+  simpa [FieldConfiguration] using
+    (OSforGFF.weakDual_measurable_of_eval_measurable (𝕜 := ℝ) (E := TestFunction) g h)
 
 /-- The fundamental pairing between a field configuration (distribution) and a test function.
     This is ⟨ω, f⟩ in the Glimm-Jaffe notation.

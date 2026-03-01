@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026.
+Copyright (c) 2026 .
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: OSforGFF contributors
+Authors: Matteo Cipollina
 -/
 
 import PhysLean.Mathematics.Distribution.WeakDualMeasurable
@@ -51,6 +51,12 @@ theorem measurable_weakDual_eval (f : E) :
     Measurable (fun ω : WeakDual 𝕜 E => ω f) :=
   PhysLean.Mathematics.Distribution.measurable_weakDual_eval (𝕜 := 𝕜) (E := E) f
 
+theorem weakDual_measurable_of_eval_measurable
+    {X : Type*} [MeasurableSpace X] (g : X → WeakDual 𝕜 E)
+    (h : ∀ f : E, Measurable (fun x => g x f)) :
+    Measurable g :=
+  PhysLean.Mathematics.Distribution.weakDual_measurable_of_eval_measurable (𝕜 := 𝕜) (E := E) g h
+
 theorem weakDual_measurable_iff_eval_measurable
     {X : Type*} [MeasurableSpace X] (g : X → WeakDual 𝕜 E) :
     Measurable g ↔ ∀ f : E, Measurable (fun x => g x f) :=
@@ -73,9 +79,14 @@ theorem weakDualCylMeasurableSpace_eq_generateFrom_finCylinders :
   PhysLean.Mathematics.Distribution.weakDualCylMeasurableSpace_eq_generateFrom_finCylinders (𝕜 := 𝕜)
     (E := E)
 
+theorem weakDualCylMeasurableSpace_eq_generateFrom_eval :
+    weakDualCylMeasurableSpace (𝕜 := 𝕜) (E := E) =
+      MeasurableSpace.generateFrom
+        {s | ∃ (f : E) (A : Set 𝕜), MeasurableSet A ∧ (fun ω : WeakDual 𝕜 E => ω f) ⁻¹' A = s} :=
+  PhysLean.Mathematics.Distribution.weakDualCylMeasurableSpace_eq_generateFrom_eval (𝕜 := 𝕜) (E := E)
+
 end
 
 end Cylindrical
 
 end OSforGFF
-

@@ -10,12 +10,12 @@ import Mathlib.Analysis.InnerProductSpace.LinearMap
 /-!
 # Minimal Gel'fand triple API `N ⊂ H ⊂ N'`
 
-This file introduces a lightweight, reusable abstraction for a Gel'fand triple
+This file introduces an abstraction for a Gel'fand triple
 `N ⊂ H ⊂ N'`, where the dual `N'` is represented as `WeakDual ℝ N`.
 
-This is intentionally *axiom-free* and *construction-free*: it only provides the core data and
-canonical maps (notably the embedding `H → N'`). Any Minlos/Gaussian measure existence theorems
-should live in separate modules which assume the required hypotheses (e.g. nuclearity).
+This only provides the core data and canonical maps (notably the embedding `H → N'`).
+Any Minlos/Gaussian measure existence theorems should live in separate modules which
+assume the required hypotheses (e.g. nuclearity).
 -/
 
 namespace PhysLean
@@ -53,6 +53,14 @@ variable (T : GelfandTriple)
 /-- The distribution space `N'` represented by the weak dual. -/
 abbrev DualSpace := WeakDual ℝ T.N
 
+/-- Optional hypothesis: the embedding `toHilbert : N → H` has dense range. -/
+class ToHilbertDenseRange (T : GelfandTriple) : Prop where
+  dense_range : DenseRange T.toHilbert
+
+lemma denseRange_toHilbert (T : GelfandTriple) [ToHilbertDenseRange T] :
+    DenseRange T.toHilbert :=
+  ToHilbertDenseRange.dense_range (T := T)
+
 /-- Diagonal “covariance” induced by the embedding `N → H` (purely as a norm-square). -/
 def covarianceDiagonal (f : T.N) : ℝ :=
   ‖T.toHilbert f‖ ^ (2 : ℕ)
@@ -88,9 +96,7 @@ noncomputable def dualEmbedding : T.H →L[ℝ] WeakDual ℝ T.N :=
       intro n
       simp
     cont := by
-      refine WeakDual.continuous_of_continuous_eval
-        (𝕜 := ℝ) (E := T.N)
-        (g := fun h : T.H => ((innerSL ℝ (E := T.H) h).comp T.toHilbert : WeakDual ℝ T.N)) ?_
+      refine WeakDual.continuous_of_continuous_eval (𝕜 := ℝ) (E := T.N) ?_
       intro n
       simpa [innerSLFlip_apply_apply] using
         (innerSLFlip ℝ (E := T.H) (T.toHilbert n)).continuous }

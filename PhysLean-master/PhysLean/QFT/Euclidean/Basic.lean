@@ -7,7 +7,7 @@ import PhysLean.QFT.Euclidean.GelfandTriple
 /-!
 # Euclidean QFT (core)
 
-This file is an import hub for the minimal Euclidean-QFT-facing core API:
+This file imports:
 
 - `EuclideanQFTModel` (measure + axiom bundle),
 - cylindrical measurable space on `WeakDual`,
@@ -15,4 +15,3 @@ This file is an import hub for the minimal Euclidean-QFT-facing core API:
 - vector-valued Schwartz/distributions and internal symmetries,
 - a minimal Gel'fand triple interface.
 -/
-
