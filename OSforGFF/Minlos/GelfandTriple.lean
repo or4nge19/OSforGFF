@@ -7,6 +7,7 @@ Authors: Matteo Cipollina
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Topology.Algebra.Module.WeakDual
 import Mathlib.Analysis.InnerProductSpace.LinearMap
+import PhysLean.QFT.Euclidean.GelfandTriple
 import OSforGFF.Minlos
 import OSforGFF.MinlosAxiomatic
 import OSforGFF.MinlosGaussianProved
@@ -41,22 +42,10 @@ open scoped RealInnerProductSpace
 
 `toHilbert` is the canonical continuous embedding of test vectors into the
 pivot Hilbert space. The dual `N'` is modeled by `WeakDual ℝ N`. -/
-structure GelfandTriple where
-  N : Type*
-  H : Type*
-  [instAddCommGroupN : AddCommGroup N]
-  [instModuleN : Module ℝ N]
-  [instTopologicalSpaceN : TopologicalSpace N]
-  [instNormedAddCommGroupH : NormedAddCommGroup H]
-  [instInnerProductSpaceH : InnerProductSpace ℝ H]
+structure GelfandTriple extends PhysLean.QFT.Minlos.GelfandTriple where
+  /-- Nuclearity/standard structure on the test space. -/
   [instNuclearN : OSforGFF.NuclearSpaceStd N]
-  toHilbert : N →L[ℝ] H
 
-attribute [instance] GelfandTriple.instAddCommGroupN
-attribute [instance] GelfandTriple.instModuleN
-attribute [instance] GelfandTriple.instTopologicalSpaceN
-attribute [instance] GelfandTriple.instNormedAddCommGroupH
-attribute [instance] GelfandTriple.instInnerProductSpaceH
 attribute [instance] GelfandTriple.instNuclearN
 
 namespace GelfandTriple

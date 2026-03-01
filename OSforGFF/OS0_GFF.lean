@@ -175,22 +175,13 @@ theorem gff_integrand_measurable
       (fun ω : FieldConfiguration =>
         Complex.exp (Complex.I * distributionPairingℂ_real ω (∑ i, z i • J i)))
       (μ_GFF m).toMeasure := by
-  -- The integrand is exp(I * pairing(ω, ∑ z_i • J_i))
-  -- 1. pairing is continuous in ω (just proved above)
-  have h_pairing_cont : Continuous
-      (fun ω : FieldConfiguration => distributionPairingℂ_real ω (∑ i, z i • J i)) :=
-    distributionPairingℂ_real_continuous (∑ i, z i • J i)
-  -- 2. Multiplication by I is continuous
-  have h_mul_I_cont : Continuous
-      (fun ω : FieldConfiguration => Complex.I * distributionPairingℂ_real ω (∑ i, z i • J i)) :=
-    continuous_const.mul h_pairing_cont
-  -- 3. exp is continuous
-  have h_exp_cont : Continuous
-      (fun ω : FieldConfiguration =>
-        Complex.exp (Complex.I * distributionPairingℂ_real ω (∑ i, z i • J i))) :=
-    Complex.continuous_exp.comp h_mul_I_cont
-  -- Continuous functions are strongly measurable
-  exact h_exp_cont.aestronglyMeasurable
+  -- The measurable space on `FieldConfiguration` is cylindrical; we use measurability facts
+  -- for the pairing, then close under measurable operations.
+  have h_meas :
+      Measurable (fun ω : FieldConfiguration =>
+        Complex.exp (Complex.I * distributionPairingℂ_real ω (∑ i, z i • J i))) := by
+    fun_prop
+  exact h_meas.aestronglyMeasurable
 
 omit [OSforGFF.NuclearSpaceStd TestFunction] in
 /-- The GFF integrand is analytic in z for each fixed field configuration ω.
@@ -318,7 +309,14 @@ lemma gff_exp_neg_pairing_integrable (f : TestFunction) :
   -- exp(-ω f) is measurable
   have h_meas : AEStronglyMeasurable (fun ω : FieldConfiguration => Real.exp (-(ω f)))
       (μ_GFF m).toMeasure :=
-    (Continuous.comp Real.continuous_exp (Continuous.neg (WeakDual.eval_continuous f))).aestronglyMeasurable
+    (by
+      have h_eval : Measurable (fun ω : FieldConfiguration => ω f) :=
+        measurable_distributionPairing f
+      have h_neg : Measurable (fun ω : FieldConfiguration => -(ω f)) :=
+        h_eval.neg
+      have h_exp : Measurable (fun ω : FieldConfiguration => Real.exp (-(ω f))) :=
+        (Real.continuous_exp.measurable.comp h_neg)
+      exact h_exp.aestronglyMeasurable)
   -- Pointwise bound: ‖exp(-ω f)‖ ≤ exp(1/(4α)) * exp(α (ω f)²)
   have h_ae_bound : ∀ᵐ ω ∂(μ_GFF m).toMeasure,
       ‖Real.exp (-(ω f))‖ ≤ Real.exp (1 / (4 * α)) * Real.exp (α * (distributionPairingCLM f ω)^2) := by
@@ -348,7 +346,14 @@ lemma gff_exp_abs_pairing_memLp (f : TestFunction) (p : ENNReal) (hp : p ≠ ⊤
   -- Case split on whether p = 0 (trivial) or p > 0
   rcases eq_or_ne p 0 with rfl | hp_pos
   · exact memLp_zero_iff_aestronglyMeasurable.mpr
-      (Real.continuous_exp.comp (continuous_abs.comp (WeakDual.eval_continuous f))).aestronglyMeasurable
+      (by
+        have h_eval : Measurable (fun ω : FieldConfiguration => ω f) :=
+          measurable_distributionPairing f
+        have h_abs : Measurable (fun ω : FieldConfiguration => |ω f|) :=
+          h_eval.abs
+        have h_exp : Measurable (fun ω : FieldConfiguration => Real.exp |ω f|) :=
+          (Real.continuous_exp.measurable.comp h_abs)
+        exact h_exp.aestronglyMeasurable)
 
   -- For 0 < p < ∞, we need ∫ (exp |x|)^p dμ < ∞
   -- (exp |x|)^p = exp(p * |x|), and for p finite this is bounded by C * exp(α x²)
@@ -361,7 +366,14 @@ lemma gff_exp_abs_pairing_memLp (f : TestFunction) (p : ENNReal) (hp : p ≠ ⊤
   -- For now, use the fact that we have L¹ integrability and the function is AE bounded
   -- by a multiple of exp(α x²) which is integrable
   have h_aesm : AEStronglyMeasurable (fun ω => Real.exp |ω f|) (μ_GFF m).toMeasure :=
-    (Real.continuous_exp.comp (continuous_abs.comp (WeakDual.eval_continuous f))).aestronglyMeasurable
+    (by
+      have h_eval : Measurable (fun ω : FieldConfiguration => ω f) :=
+        measurable_distributionPairing f
+      have h_abs : Measurable (fun ω : FieldConfiguration => |ω f|) :=
+        h_eval.abs
+      have h_exp : Measurable (fun ω : FieldConfiguration => Real.exp |ω f|) :=
+        (Real.continuous_exp.measurable.comp h_abs)
+      exact h_exp.aestronglyMeasurable)
 
   -- The core estimate: exp(p|x|) ≤ C * exp(α x²) for some C depending on p and α
   -- This follows from: p|x| ≤ p²/(4α) + α x² (Young's inequality)
@@ -416,8 +428,16 @@ lemma gff_exp_abs_pairing_memLp (f : TestFunction) (p : ENNReal) (hp : p ≠ ⊤
   -- Integrability of exp(p|ω f|) follows from domination
   have h_exp_p_integrable : Integrable (fun ω => Real.exp (p.toReal * |ω f|)) (μ_GFF m).toMeasure := by
     have h_meas : AEStronglyMeasurable (fun ω => Real.exp (p.toReal * |ω f|)) (μ_GFF m).toMeasure :=
-      (Real.continuous_exp.comp (continuous_const.mul (continuous_abs.comp
-        (WeakDual.eval_continuous f)))).aestronglyMeasurable
+      (by
+        have h_eval : Measurable (fun ω : FieldConfiguration => ω f) :=
+          measurable_distributionPairing f
+        have h_abs : Measurable (fun ω : FieldConfiguration => |ω f|) :=
+          h_eval.abs
+        have h_mul : Measurable (fun ω : FieldConfiguration => p.toReal * |ω f|) :=
+          measurable_const.mul h_abs
+        have h_exp : Measurable (fun ω : FieldConfiguration => Real.exp (p.toReal * |ω f|)) :=
+          (Real.continuous_exp.measurable.comp h_mul)
+        exact h_exp.aestronglyMeasurable)
     -- Use Integrable.mono': if g is integrable and ‖f‖ ≤ g a.e., then f is integrable
     apply h_dom.mono' h_meas
     filter_upwards with ω
@@ -668,8 +688,19 @@ theorem gff_integrand_fderiv_measurable (n : ℕ) (J : Fin n → TestFunctionℂ
   have h_cont : Continuous (fun ω => fderiv ℂ (fun z => Complex.exp (Complex.I * distributionPairingℂ_real ω (∑ i, z i • J i))) z₀) := by
     simp_rw [h_fderiv_eq]
     exact hF_cont
-
-  exact h_cont.aestronglyMeasurable
+  have h_meas :
+      Measurable (fun ω =>
+        fderiv ℂ
+          (fun z => Complex.exp (Complex.I * distributionPairingℂ_real ω (∑ i, z i • J i))) z₀) := by
+    -- Use the explicit formula `h_fderiv_eq` which expresses the derivative using only
+    -- measurable building blocks (pairings + finite sums + scalar multiplication).
+    -- This avoids any reliance on topological `BorelSpace` on `FieldConfiguration`.
+    simp_rw [h_fderiv_eq]
+    -- `F` is built from measurable scalars and fixed continuous linear maps.
+    -- We prove measurability by showing that all coefficients are measurable.
+    -- (The target space has its standard measurable structure.)
+    fun_prop
+  exact h_meas.aestronglyMeasurable
 
 
 
@@ -801,14 +832,11 @@ theorem gff_integrand_fderiv_bound (n : ℕ) (J : Fin n → TestFunctionℂ) (z�
         -- ‖distributionPairingℂ_real ω f‖ ≤ |ω f_re| + |ω f_im| (triangle inequality for complex norm)
         apply h_sum_abs.mono'
         · -- Measurability
-          apply AEStronglyMeasurable.norm
-          simp only [distributionPairingℂ_real]
-          apply AEStronglyMeasurable.add
-          · exact Complex.continuous_ofReal.aestronglyMeasurable.comp_aemeasurable
-              (WeakDual.eval_continuous φRe).aestronglyMeasurable.aemeasurable
-          · apply AEStronglyMeasurable.const_mul
-            exact Complex.continuous_ofReal.aestronglyMeasurable.comp_aemeasurable
-              (WeakDual.eval_continuous φIm).aestronglyMeasurable.aemeasurable
+          have hmeas : Measurable (fun ω : FieldConfiguration => distributionPairingℂ_real ω (J i)) := by
+            simpa using measurable_distributionPairingℂ_real (J i)
+          have hnorm : Measurable (fun ω : FieldConfiguration => ‖distributionPairingℂ_real ω (J i)‖) :=
+            (continuous_norm.measurable.comp hmeas)
+          exact hnorm.aestronglyMeasurable
         · -- The bound ‖distributionPairingℂ_real ω f‖ ≤ |ω f_re| + |ω f_im|
           filter_upwards with ω
           simp only [distributionPairingℂ_real, φRe, φIm, complex_testfunction_decompose]

@@ -116,7 +116,6 @@ Core type definitions and infrastructure for the formalization.
 | File | Contents |
 |------|----------|
 | [Basic](OSforGFF/Basic.lean) | SpaceTime (ℝ⁴), TestFunction, FieldConfiguration, distribution pairing, spatial geometry |
-| [Spacetime/Defs](OSforGFF/Spacetime/Defs.lean) | Dimension-agnostic aliases for reference measure and Schwartz test functions |
 | [Spacetime/TimeDirection](OSforGFF/Spacetime/TimeDirection.lean) | Coordinate-free time direction + reflection API for OS axioms |
 | [Spacetime/VectorValued](OSforGFF/Spacetime/VectorValued.lean) | Vector-valued Schwartz/distribution spaces + lifted global internal symmetries |
 | [Euclidean](OSforGFF/Euclidean.lean) | Euclidean group E(d) and its action on test functions |
@@ -172,6 +171,12 @@ via a proved **Kolmogorov + nuclear support** pipeline (finite-dimensional Gauss
 | [NuclearSpace/Std](OSforGFF/NuclearSpace/Std.lean) | Countable-seminorm nuclearity package (`NuclearSpaceStd`) |
 | [NuclearSpace/Schwartz](OSforGFF/NuclearSpace/Schwartz.lean) | Canonical Schwartz seminorm sequence + gap packaged as `SchwartzNuclearInclusion` |
 | [NuclearSpace/PhysHermiteSpaceTimeSchwartzNuclearInclusion](OSforGFF/NuclearSpace/PhysHermiteSpaceTimeSchwartzNuclearInclusion.lean) | Discharges `SchwartzNuclearInclusion` (hence `NuclearSpaceStd TestFunction`) via spacetime Hermite coefficients |
+| [GFF/Package](OSforGFF/GFF/Package.lean) | Stable backend interface: `μ` + real characteristic functional |
+| [GFF/PackageProved](OSforGFF/GFF/PackageProved.lean) | Proved implementation of `GFF.Package` |
+| [GFF/PackageOS0](OSforGFF/GFF/PackageOS0.lean) | Extension of `GFF.Package` with OS0 analyticity |
+| [GFF/PackageOS0Proved](OSforGFF/GFF/PackageOS0Proved.lean) | Proved implementation of `GFF.PackageOS0` |
+| [GFF/ComplexCharacteristic](OSforGFF/GFF/ComplexCharacteristic.lean) | Complex characteristic functional from `PackageOS0` (backend-agnostic) |
+| [GFF/ComplexCharacteristicProved](OSforGFF/GFF/ComplexCharacteristicProved.lean) | Specialization of complex CF to the proved free GFF |
 | [GaussianProcessKolmogorov](OSforGFF/GaussianProcessKolmogorov.lean) | Kolmogorov Gaussian process measure on `E → ℝ` |
 | [MinlosGaussianSupportNuclearL2](OSforGFF/MinlosGaussianSupportNuclearL2.lean) | Nuclear `L²` support theorem + measurable modification into `WeakDual` |
 | [MinlosGaussianProved](OSforGFF/MinlosGaussianProved.lean) | Pushforward to `WeakDual` + characteristic functional identity |
@@ -185,11 +190,10 @@ The repository also contains an **optional hypothesis package**
 `OSforGFF/MinlosAxiomatic.lean` (Minlos theorem as a typeclass `MinlosTheorem`), but the proved GFF
 pipeline does **not** rely on it.
 
-**Note:** `GFFIsGaussian` imports `OS0` because it uses the proved analyticity of
-Z[z₀f + z₁g] in ℂ² to identify the two-point function S₂(f,g) = C(f,g) via the
-identity theorem. The derivative interchange lemma is from Mathlib; the dependency
-is on the OS0 *result* (analyticity of the GFF generating functional), not on
-OS0-specific infrastructure.
+**Note:** The analytic-continuation argument proving the complex characteristic functional
+is now packaged in `OSforGFF/GFF/ComplexCharacteristic.lean` (parametric in a `GFF.PackageOS0`)
+and specialized to the proved free GFF in `OSforGFF/GFF/ComplexCharacteristicProved.lean`.
+`GFFIsGaussian` consumes that result and focuses on the moment-level consequences.
 
 ---
 

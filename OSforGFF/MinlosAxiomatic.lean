@@ -29,12 +29,11 @@ open scoped BigOperators
 noncomputable section
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
-
--- We need a measurable space structure on the weak dual
-instance : MeasurableSpace (WeakDual ℝ E) := borel _
+variable [MeasurableSpace (WeakDual ℝ E)]
 
 /-- A bundled assumption asserting Minlos' theorem on `E`. -/
-class MinlosTheorem (E : Type*) [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] : Prop extends
+class MinlosTheorem (E : Type*) [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [MeasurableSpace (WeakDual ℝ E)] : Prop extends
     OSforGFF.NuclearSpaceStd E where
   /-- **Minlos Theorem** (existence and uniqueness): On a nuclear locally convex space `E`,
   a continuous, positive definite, normalized functional `Φ : E → ℂ` is the characteristic

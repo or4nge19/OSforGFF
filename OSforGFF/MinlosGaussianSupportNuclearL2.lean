@@ -487,9 +487,21 @@ noncomputable def omegaModWeakDual : Ω → WeakDual ℝ E := fun ω =>
 theorem measurable_omegaModWeakDual :
     Measurable (omegaModWeakDual (E := E) (H := H) (T := T) (hle := hle) (hnm := hnm) (m := m)
       (hNuc := hNuc)) := by
-  have hcont : Continuous (toWeakDual (E := E) (m := m)) :=
+  refine MinlosGaussianToWeakDual.weakDual_measurable_of_eval_measurable (E := E)
+    (g := omegaModWeakDual (E := E) (H := H) (T := T) (hle := hle) (hnm := hnm) (m := m)
+      (hNuc := hNuc)) ?_
+  intro f
+  have hcont_toWeakDual : Continuous (toWeakDual (E := E) (m := m)) :=
     continuous_toWeakDual (E := E) (m := m)
-  exact hcont.measurable.comp (measurable_LBanachLim (T := T) (hle := hle) (hnm := hnm) (hNuc := hNuc))
+  have hcont_eval :
+      Continuous (fun L : BanachM →L[ℝ] ℝ => (toWeakDual (E := E) (m := m) L) f) :=
+    (WeakDual.eval_continuous (𝕜 := ℝ) (E := E) f).comp hcont_toWeakDual
+  have hmeas_eval :
+      Measurable (fun L : BanachM →L[ℝ] ℝ => (toWeakDual (E := E) (m := m) L) f) :=
+    hcont_eval.measurable
+  -- `omegaModWeakDual` is obtained by composing `LBanachLim` with `toWeakDual`.
+  simpa [omegaModWeakDual] using
+    hmeas_eval.comp (measurable_LBanachLim (T := T) (hle := hle) (hnm := hnm) (hNuc := hNuc))
 
 private lemma termCLM_apply (ω : Ω) (k : ℕ) (x : BanachM) :
     termCLM (T := T) (hle := hle) (hnm := hnm) (hNuc := hNuc) ω k x

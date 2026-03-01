@@ -121,7 +121,11 @@ lemma gff_exp_pairing_integrable (m : ℝ) [Fact (0 < m)] (f : TestFunctionℂ) 
   -- Use Integrable.mono: if g is integrable and ‖f‖ ≤ ‖g‖ a.e., then f is integrable
   refine h_int.mono ?_ (Filter.Eventually.of_forall h_dom)
   -- Need AEStronglyMeasurable for exp ∘ distributionPairingℂ_real
-  exact (Complex.continuous_exp.comp (QFT.distributionPairingℂ_real_continuous f)).aestronglyMeasurable
+  have h_pair : Measurable (fun ω : FieldConfiguration => distributionPairingℂ_real ω f) :=
+    measurable_distributionPairingℂ_real f
+  have h_exp : Measurable (fun ω : FieldConfiguration => Complex.exp (distributionPairingℂ_real ω f)) :=
+    (Complex.continuous_exp.measurable.comp h_pair)
+  exact h_exp.aestronglyMeasurable
 
 /-- Time-translated complex exponential is in L² under the GFF measure.
     This follows from |exp(z)|² = exp(2 Re z) ≤ exp(2|Re z|) which is integrable.
@@ -139,8 +143,11 @@ lemma gff_exp_time_translated_memLp_two (m : ℝ) [Fact (0 < m)] (s : ℝ) (f : 
   have h_meas : AEStronglyMeasurable
       (fun ω : FieldConfiguration => Complex.exp (distributionPairingℂ_real ω g))
       (gaussianFreeField_free m).toMeasure := by
-    apply Continuous.aestronglyMeasurable
-    exact Complex.continuous_exp.comp (QFT.distributionPairingℂ_real_continuous g)
+    have h_pair : Measurable (fun ω : FieldConfiguration => distributionPairingℂ_real ω g) :=
+      measurable_distributionPairingℂ_real g
+    have h_exp : Measurable (fun ω : FieldConfiguration => Complex.exp (distributionPairingℂ_real ω g)) :=
+      (Complex.continuous_exp.measurable.comp h_pair)
+    exact h_exp.aestronglyMeasurable
   -- The dominating function: exp(2|ω g_re|) is integrable
   have h_dom : Integrable (fun ω : FieldConfiguration =>
       Real.exp (2 * |ω (complex_testfunction_decompose g).1|))
@@ -152,7 +159,17 @@ lemma gff_exp_time_translated_memLp_two (m : ℝ) [Fact (0 < m)] (s : ℝ) (f : 
       have h_pos : 0 ≤ Real.exp |ω (complex_testfunction_decompose g).1| := Real.exp_nonneg _
       rw [Real.norm_eq_abs, abs_of_nonneg h_pos, sq, ← Real.exp_add]
       ring_nf
-    · exact (Real.continuous_exp.comp (continuous_abs.comp (WeakDual.eval_continuous _))).aestronglyMeasurable
+    ·
+      have h_eval :
+          Measurable (fun ω : FieldConfiguration => ω (complex_testfunction_decompose g).1) :=
+        measurable_distributionPairing (complex_testfunction_decompose g).1
+      have h_abs :
+          Measurable (fun ω : FieldConfiguration => |ω (complex_testfunction_decompose g).1|) :=
+        h_eval.abs
+      have h_exp :
+          Measurable (fun ω : FieldConfiguration => Real.exp |ω (complex_testfunction_decompose g).1|) :=
+        (Real.continuous_exp.measurable.comp h_abs)
+      exact h_exp.aestronglyMeasurable
   -- The bound: ‖exp(z)‖² = exp(2 Re z) ≤ exp(2|Re z|)
   have h_sq_norm_bound : ∀ ω : FieldConfiguration,
       ‖Complex.exp (distributionPairingℂ_real ω g)‖^2 ≤
@@ -298,7 +315,15 @@ lemma time_average_memLp_two (m : ℝ) [Fact (0 < m)] (f : TestFunctionℂ) (T :
         ext ω; rw [timeTranslationDistribution_pairingℂ]
       show StronglyMeasurable (fun ω => Complex.exp (distributionPairingℂ_real (timeTranslationDistribution s ω) f))
       rw [h_eq]
-      exact (Complex.continuous_exp.comp (QFT.distributionPairingℂ_real_continuous _)).stronglyMeasurable
+      have h_pair :
+          Measurable (fun ω : FieldConfiguration =>
+            distributionPairingℂ_real ω (timeTranslationSchwartzℂ (-s) f)) :=
+        measurable_distributionPairingℂ_real (timeTranslationSchwartzℂ (-s) f)
+      have h_exp :
+          Measurable (fun ω : FieldConfiguration =>
+            Complex.exp (distributionPairingℂ_real ω (timeTranslationSchwartzℂ (-s) f))) :=
+        (Complex.continuous_exp.measurable.comp h_pair)
+      exact h_exp.stronglyMeasurable
   -- Measurability of the time average
   have h_avg_meas : AEStronglyMeasurable
       (fun ω => (1/T : ℂ) * ∫ s in Set.Icc 0 T, A s ω) μ := by
@@ -622,8 +647,17 @@ lemma L2_time_average_variance_bound (m : ℝ) [Fact (0 < m)] (f : TestFunction�
       -- A s equals this rewritten function
       show StronglyMeasurable (fun ω => Complex.exp (distributionPairingℂ_real (timeTranslationDistribution s ω) f))
       rw [h_eq]
-      -- Now prove continuity of the rewritten function → StronglyMeasurable
-      exact (Complex.continuous_exp.comp (QFT.distributionPairingℂ_real_continuous _)).stronglyMeasurable
+      -- With the cylindrical σ-algebra on `FieldConfiguration`, measurability of pairings is
+      -- available directly, so we avoid relying on `OpensMeasurableSpace`.
+      have h_pair :
+          Measurable (fun ω : FieldConfiguration =>
+            distributionPairingℂ_real ω (timeTranslationSchwartzℂ (-s) f)) :=
+        measurable_distributionPairingℂ_real (timeTranslationSchwartzℂ (-s) f)
+      have h_exp :
+          Measurable (fun ω : FieldConfiguration =>
+            Complex.exp (distributionPairingℂ_real ω (timeTranslationSchwartzℂ (-s) f))) :=
+        (Complex.continuous_exp.measurable.comp h_pair)
+      exact h_exp.stronglyMeasurable
 
   -- L² integrability on [0,T] × Ω (crucial for Fubini)
   -- Proof outline:
@@ -663,8 +697,15 @@ lemma L2_time_average_variance_bound (m : ℝ) [Fact (0 < m)] (f : TestFunction�
         (timeTranslationSchwartzℂ (-s) f))) := by
       ext ω; rw [timeTranslationDistribution_pairingℂ]
     rw [h_eq]
-    exact (Complex.continuous_exp.comp
-      (QFT.distributionPairingℂ_real_continuous _)).stronglyMeasurable
+    have h_pair :
+        Measurable (fun ω : FieldConfiguration =>
+          distributionPairingℂ_real ω (timeTranslationSchwartzℂ (-s) f)) :=
+      measurable_distributionPairingℂ_real (timeTranslationSchwartzℂ (-s) f)
+    have h_exp :
+        Measurable (fun ω : FieldConfiguration =>
+          Complex.exp (distributionPairingℂ_real ω (timeTranslationSchwartzℂ (-s) f))) :=
+      (Complex.continuous_exp.measurable.comp h_pair)
+    exact h_exp.stronglyMeasurable
   -- Fubini integrability for the covariance triple integral swap
   -- Uses textbook axiom: L² slices + continuity + measurability → triple product integrable
   have h_Fubini : Integrable (fun (x : FieldConfiguration × (ℝ × ℝ)) =>
@@ -1222,7 +1263,11 @@ theorem OS4'_implies_OS4 (m : ℝ) [Fact (0 < m)] :
           ext ω; rw [timeTranslationDistribution_pairingℂ]
         show Measurable (A_j s)
         simp only [A_j]; rw [h_eq]
-        exact (Complex.continuous_exp.comp (QFT.distributionPairingℂ_real_continuous _)).measurable
+        have h_pair :
+            Measurable (fun ω : FieldConfiguration =>
+              distributionPairingℂ_real ω (timeTranslationSchwartzℂ (-s) (f j))) :=
+          measurable_distributionPairingℂ_real (timeTranslationSchwartzℂ (-s) (f j))
+        exact (Complex.continuous_exp.measurable.comp h_pair)
       exact OSforGFF.gff_time_integral_aestronglyMeasurable_proved μ A_j EA_j T h_cont h_meas_s
     -- LHS integrability: ‖∑ z_j * Err_j‖² is bounded by Z * ∑ ‖Err_j‖² (via h_cs)
     have h_weighted_int : Integrable (fun ω => ‖∑ j, z j * Err j T ω‖^2) μ := by

@@ -123,6 +123,12 @@ discharged in the spacetime Hermite model; see
 
 noncomputable section
 
+set_option maxHeartbeats 1000000
+
+private lemma measurable_distributionPairingCLM (φ : TestFunction) :
+    Measurable (distributionPairingCLM φ) := by
+  simpa [distributionPairingCLM, distributionPairing] using measurable_distributionPairing φ
+
 /-! ## Gaussian Measures on Field Configurations
 -/
 
@@ -198,7 +204,7 @@ private lemma charFun_eq_GJGeneratingFunctional
   charFun (μ.toMeasure.map (distributionPairingCLM φ)) t =
     GJGeneratingFunctional μ (t • φ) := by
   rw [charFun]
-  rw [integral_map (by fun_prop) (by fun_prop)]
+  rw [integral_map (measurable_distributionPairingCLM (φ := φ)).aemeasurable (by fun_prop)]
   rw [GJGeneratingFunctional]
   congr 1
   ext ω
@@ -217,7 +223,7 @@ private lemma gff_pushforward_charFun
   charFun ((gaussianFreeField_free m).toMeasure.map (distributionPairingCLM φ)) t =
     Complex.exp (-(1/2 : ℂ) * t^2 * (freeCovarianceFormR m φ φ : ℝ)) := by
   haveI : IsProbabilityMeasure ((gaussianFreeField_free m).toMeasure.map (distributionPairingCLM φ)) :=
-    Measure.isProbabilityMeasure_map (Measurable.aemeasurable (distributionPairingCLM φ).continuous.measurable)
+    Measure.isProbabilityMeasure_map (measurable_distributionPairingCLM (φ := φ)).aemeasurable
   rw [charFun_eq_GJGeneratingFunctional]
   have h_char := gff_real_characteristic m (t • φ)
   rw [h_char]
@@ -234,7 +240,7 @@ theorem gff_pairing_is_gaussian
   (gaussianFreeField_free m).toMeasure.map (distributionPairingCLM φ)
     = gaussianReal 0 (freeCovarianceFormR m φ φ).toNNReal := by
   haveI : IsProbabilityMeasure ((gaussianFreeField_free m).toMeasure.map (distributionPairingCLM φ)) :=
-    Measure.isProbabilityMeasure_map (Measurable.aemeasurable (distributionPairingCLM φ).continuous.measurable)
+    Measure.isProbabilityMeasure_map (measurable_distributionPairingCLM (φ := φ)).aemeasurable
   apply charFun_implies_gaussian
   intro t
   rw [gff_pushforward_charFun]
@@ -264,7 +270,22 @@ theorem gaussianFreeField_pairing_memLp
   have h_memLp : MemLp id (ENNReal.ofNNReal p.toNNReal) (gaussianReal 0 (freeCovarianceFormR m φ φ).toNNReal) :=
     memLp_id_gaussianReal p.toNNReal
   rw [← h_gauss] at h_memLp
-  rwa [memLp_map_measure_iff (by fun_prop) (by fun_prop)] at h_memLp
+  have hg :
+      AEStronglyMeasurable (fun x : ℝ => x)
+        (((gaussianFreeField_free m).toMeasure).map (distributionPairingCLM φ)) :=
+    (measurable_id : Measurable (fun x : ℝ => x)).aestronglyMeasurable
+  have hf :
+      AEMeasurable (distributionPairingCLM φ) (gaussianFreeField_free m).toMeasure :=
+    (measurable_distributionPairingCLM (φ := φ)).aemeasurable
+  have h :=
+      (MeasureTheory.memLp_map_measure_iff
+        (μ := (gaussianFreeField_free m).toMeasure)
+        (f := (distributionPairingCLM φ))
+        (g := fun x : ℝ => x)
+        (p := ENNReal.ofNNReal p.toNNReal)
+        (hg := hg)
+        (hf := hf)).1 h_memLp
+  simpa using h
 
 /-- The GFF pairing has an integrable square (is in L²).
     This follows from the fact that the pushforward is a Gaussian measure,
@@ -280,10 +301,25 @@ lemma gff_pairing_square_integrable
     memLp_id_gaussianReal 2
   -- Rewrite in terms of the pushforward measure
   rw [← h_gauss] at h_memL2
-  -- MemLp id under the pushforward equals MemLp of the original function
-  rw [memLp_map_measure_iff (by fun_prop) (by fun_prop)] at h_memL2
-  -- For real-valued functions, MemLp 2 means square-integrable
-  exact h_memL2.integrable_sq
+  have hg :
+      AEStronglyMeasurable (fun x : ℝ => x)
+        (((gaussianFreeField_free m).toMeasure).map (distributionPairingCLM φ)) :=
+    (measurable_id : Measurable (fun x : ℝ => x)).aestronglyMeasurable
+  have hf :
+      AEMeasurable (distributionPairingCLM φ) (gaussianFreeField_free m).toMeasure :=
+    (measurable_distributionPairingCLM (φ := φ)).aemeasurable
+  have h :=
+      (MeasureTheory.memLp_map_measure_iff
+        (μ := (gaussianFreeField_free m).toMeasure)
+        (f := (distributionPairingCLM φ))
+        (g := fun x : ℝ => x)
+        (p := (2 : ENNReal))
+        (hg := hg)
+        (hf := hf)).1 h_memL2
+  have h_memL2' :
+      MemLp (distributionPairingCLM φ) (2 : ENNReal) (gaussianFreeField_free m).toMeasure := by
+    simpa using h
+  exact h_memL2'.integrable_sq
 
 /-- The second moment of the GFF pairing equals the covariance form.
     This follows from the fact that the pushforward is a Gaussian with variance
@@ -298,7 +334,7 @@ lemma gff_second_moment_eq_covariance
   -- Rewrite the integral as an integral under the pushforward measure
   calc ∫ ω, (distributionPairingCLM φ ω)^2 ∂(gaussianFreeField_free m).toMeasure
     _ = ∫ x, x^2 ∂((gaussianFreeField_free m).toMeasure.map (distributionPairingCLM φ)) := by
-      rw [integral_map (by fun_prop) (by fun_prop)]
+      rw [integral_map (measurable_distributionPairingCLM (φ := φ)).aemeasurable (by fun_prop)]
     _ = ∫ x, x^2 ∂(gaussianReal 0 (freeCovarianceFormR m φ φ).toNNReal) := by
       rw [h_gauss]
     _ = (freeCovarianceFormR m φ φ).toNNReal := by
@@ -349,14 +385,23 @@ theorem gaussianFreeField_pairing_expSq_integrable
   refine ⟨C, hC_pos, ?_⟩
   -- Rewrite using h_gauss: the Gaussian equals the pushforward
   rw [← h_gauss] at hC_int
-  -- Pull back through the measurable pairing map
-  rw [integrable_map_measure (by fun_prop) (by fun_prop)] at hC_int
-  -- Convert ‖x‖² to x² for ℝ (they are equal for real numbers)
-  convert hC_int using 2
-  -- Goal: exp (C * y²) = exp (C * ‖y‖²) where y : ℝ
-  simp only [Function.comp_apply]
-  congr 1
-  rw [Real.norm_eq_abs, sq_abs]
+  -- Pull back through the measurable pairing map.
+  have hg :
+      AEStronglyMeasurable (fun x : ℝ => Real.exp (C * ‖x‖ ^ 2))
+        (((gaussianFreeField_free m).toMeasure).map (distributionPairingCLM φ)) := by
+    have hmeas : Measurable (fun x : ℝ => Real.exp (C * ‖x‖ ^ 2)) := by
+      fun_prop
+    exact hmeas.aestronglyMeasurable
+  have hf :
+      AEMeasurable (distributionPairingCLM φ) (gaussianFreeField_free m).toMeasure :=
+    (measurable_distributionPairingCLM (φ := φ)).aemeasurable
+  have hC_int' :
+      Integrable (fun ω => Real.exp (C * ‖distributionPairingCLM φ ω‖ ^ 2))
+        (gaussianFreeField_free m).toMeasure :=
+    (integrable_map_measure (hg := hg) (hf := hf)).1 hC_int
+  -- Convert ‖x‖² to x² for ℝ (they are equal for real numbers).
+  convert hC_int' using 2
+  simp only [Real.norm_eq_abs, sq_abs]
 
 /-- For real test functions, the square of the Gaussian pairing is integrable under the
     free Gaussian Free Field measure. This is the diagonal (f = g) case needed for
